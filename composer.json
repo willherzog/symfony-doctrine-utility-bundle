@@ -1,0 +1,33 @@
+{
+	"name": "willherzog/symfony-doctrine-utility-bundle",
+	"description": "A Symfony bundle providing some additional utilities for working with Doctrine ORM.",
+    "type": "symfony-bundle",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Will Herzog",
+            "email": "willherzog@gmail.com"
+        }
+    ],
+	"repositories": [
+		{
+			"type": "vcs",
+			"url": "https://github.com/willherzog/php-util"
+		},
+		{
+			"type": "vcs",
+			"url": "https://github.com/willherzog/doctrine-generic"
+		}
+	],
+    "require": {
+		"php": "^8.2",
+        "doctrine/doctrine-bundle": "^2.11",
+        "doctrine/orm": "^2.19",
+		"symfony/framework-bundle": "^7.0",
+        "willherzog/doctrine-generic": "dev-main",
+		"willherzog/php-util": "dev-main"
+	},
+    "autoload": {
+        "psr-4": { "WHSymfony\\WHDoctrineUtilityBundle\\": "src/" }
+    }
+}
