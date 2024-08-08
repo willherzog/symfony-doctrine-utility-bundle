@@ -9,6 +9,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
+use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Contracts\Service\ServiceSubscriberInterface;
 
 use WHSymfony\WHDoctrineUtilityBundle\WHDoctrineUtilityBundle as BundleConstants;
@@ -68,7 +69,15 @@ class KernelResponseListener implements ServiceSubscriberInterface
 				$entityManager->flush();
 
 				if( $this->locator->has('logger') ) {
-					$this->locator->get('logger')->info('Called ->flush() on Doctrine entity manager for kernel.response event.', [
+					$this->locator->get('logger')->info('Called ->flush() on Doctrine entity manager.', [
+						'event' => KernelEvents::RESPONSE,
+						'using_non_default_manager' => $usingNonDefaultManager
+					]);
+				}
+			} else {
+				if( $this->locator->has('logger') ) {
+					$this->locator->get('logger')->info('Request attribute "wh_doctrine_flush_required" is present but Doctrine entity manager is closed (cannot flush).', [
+						'event' => KernelEvents::RESPONSE,
 						'using_non_default_manager' => $usingNonDefaultManager
 					]);
 				}
