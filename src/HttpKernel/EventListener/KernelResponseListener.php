@@ -31,11 +31,12 @@ class KernelResponseListener implements ServiceSubscriberInterface
 
 	public function __invoke(ResponseEvent $event): void
 	{
-		if( !$event->isMainRequest() ) {
+		$request = $event->getRequest();
+		$response = $event->getResponse();
+
+		if( !$event->isMainRequest() || $response->isClientError() || $response->isServerError() ) {
 			return;
 		}
-
-		$request = $event->getRequest();
 
 		if(
 			$request->attributes->has(BundleConstants::REQUEST_ATTR_FLUSH_REQUIRED)
