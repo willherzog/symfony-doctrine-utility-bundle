@@ -5,17 +5,28 @@ namespace WHSymfony\WHDoctrineUtilityBundle\HttpKernel\EventListener;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 
+use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerInterface;
+
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
+use Symfony\Contracts\Service\ServiceSubscriberInterface;
 
 use WHSymfony\WHDoctrineUtilityBundle\WHDoctrineUtilityBundle as BundleConstants;
 
 /**
  * @author Will Herzog <willherzog@gmail.com>
  */
-class KernelResponseListener
+class KernelResponseListener implements ServiceSubscriberInterface
 {
-	public function __construct(private readonly ManagerRegistry $managerRegistry)
-	{}
+	static public function getSubscribedServices(): array
+	{
+		return ['logger' => LoggerInterface::class];
+	}
+
+	public function __construct(
+		private readonly ManagerRegistry $managerRegistry,
+		private readonly ContainerInterface $locator
+	) {}
 
 	public function __invoke(ResponseEvent $event): void
 	{
@@ -39,6 +50,8 @@ class KernelResponseListener
 						EntityManagerInterface::class
 					));
 				}
+
+				$usingNonDefaultManager = true;
 			} else {
 				$entityManager = $this->managerRegistry->getManager();
 
@@ -47,10 +60,18 @@ class KernelResponseListener
 				if( !$entityManager instanceof EntityManagerInterface ) {
 					return;
 				}
+
+				$usingNonDefaultManager = false;
 			}
 
 			if( $entityManager->isOpen() ) {
 				$entityManager->flush();
+
+				if( $this->locator->has('logger') ) {
+					$this->locator->get('logger')->info('Called ->flush() on Doctrine entity manager for kernel.response event.', [
+						'using_non_default_manager' => $usingNonDefaultManager
+					]);
+				}
 			}
 		}
 	}

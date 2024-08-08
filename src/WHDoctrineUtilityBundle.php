@@ -6,6 +6,7 @@ use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service_locator;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 
 use WHDoctrine\Hydration\SimplifiedArrayHydrator;
@@ -49,6 +50,10 @@ class WHDoctrineUtilityBundle extends AbstractBundle
 				]
 			]
 		]);
+
+		$container->extension('monolog', [
+			'channels' => ['whdoctrine']
+		]);
 	}
 
 	public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
@@ -56,8 +61,12 @@ class WHDoctrineUtilityBundle extends AbstractBundle
 		if( $config['enable_kernel_response_listener'] ) {
 			$container->services()
 				->set('whdoctrine.kernel_response_listener', KernelResponseListener::class)
-					->args([service('doctrine')])
+					->args([
+						service('doctrine'),
+						service_locator(['logger' => service('logger')->ignoreOnInvalid()])
+					])
 					->tag('kernel.event_listener', ['event' => 'kernel.response'])
+					->tag('monolog.logger', ['channel' => 'whdoctrine'])
 			;
 		}
 	}
