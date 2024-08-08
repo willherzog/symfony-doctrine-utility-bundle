@@ -29,7 +29,7 @@ class WHDoctrineUtilityBundle extends AbstractBundle
 		$definition->rootNode()
 			->children()
 				->booleanNode('enable_kernel_response_listener')
-					->defaultFalse()
+					->defaultTrue()
 					->info('Whether WHDoctrineUtilityBundle\'s kernel response listener should be enabled.')
 				->end()
 			->end()
