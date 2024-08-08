@@ -52,7 +52,7 @@ class KernelResponseListener implements ServiceSubscriberInterface
 					));
 				}
 
-				$usingNonDefaultManager = true;
+				$usingDefaultManager = false;
 			} else {
 				$entityManager = $this->managerRegistry->getManager();
 
@@ -62,7 +62,7 @@ class KernelResponseListener implements ServiceSubscriberInterface
 					return;
 				}
 
-				$usingNonDefaultManager = false;
+				$usingDefaultManager = true;
 			}
 
 			if( $entityManager->isOpen() ) {
@@ -71,14 +71,14 @@ class KernelResponseListener implements ServiceSubscriberInterface
 				if( $this->locator->has('logger') ) {
 					$this->locator->get('logger')->info('Called ->flush() on Doctrine entity manager.', [
 						'event' => KernelEvents::RESPONSE,
-						'using_non_default_manager' => $usingNonDefaultManager
+						'using_default_manager' => $usingDefaultManager
 					]);
 				}
 			} else {
 				if( $this->locator->has('logger') ) {
 					$this->locator->get('logger')->info('Request attribute "wh_doctrine_flush_required" is present but Doctrine entity manager is closed (cannot flush).', [
 						'event' => KernelEvents::RESPONSE,
-						'using_non_default_manager' => $usingNonDefaultManager
+						'using_default_manager' => $usingDefaultManager
 					]);
 				}
 			}
