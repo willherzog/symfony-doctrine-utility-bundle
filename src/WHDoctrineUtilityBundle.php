@@ -63,10 +63,9 @@ class WHDoctrineUtilityBundle extends AbstractBundle
 				->set('whdoctrine.kernel_response_listener', KernelResponseListener::class)
 					->args([
 						service('doctrine'),
-						service_locator(['logger' => service('logger')->ignoreOnInvalid()])
+						service_locator(['logger' => service('monolog.logger.whdoctrine')->ignoreOnInvalid()])
 					])
 					->tag('kernel.event_listener', ['event' => 'kernel.response'])
-					->tag('monolog.logger', ['channel' => 'whdoctrine'])
 			;
 		}
 	}
