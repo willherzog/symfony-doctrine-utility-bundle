@@ -1,7 +1,19 @@
 # WHDoctrineUtilityBundle
  A Symfony bundle which handles configuration of my `willherzog/doctrine-generic` library and, by default, enables a listener to Symfony's `kernel.response` event which allows for "lazy" flushing of the Doctrine entity manager.
 
- To use the "lazy" flushing feature, set an attribute on the *main* Symfony `Request` object (because only the main request is supported) which uses `WHDoctrineUtilityBundle::REQUEST_ATTR_FLUSH_REQUIRED` as its name/key and boolean `true` as its value.
+ To use the "lazy" flushing feature, set an attribute on the *main* Symfony `Request` object (because only the main request is supported) which uses `WHDoctrineUtilityBundle::REQUEST_ATTR_FLUSH_REQUIRED` as its name/key and boolean `true` as its value:
+
+```php
+use Symfony\Component\HttpFoundation\RequestStack;
+use WHSymfony\WHDoctrineUtilityBundle\WHDoctrineUtilityBundle;
+
+/* ... */
+
+/** @var RequestStack $requestStack */
+$request = $requestStack->getMainRequest();
+
+$request->attributes->set(WHDoctrineUtilityBundle::REQUEST_ATTR_FLUSH_REQUIRED, true);
+```
 
  If you're using a Doctrine entity manager other than the default one, set another `Request` attribute using `WHDoctrineUtilityBundle::REQUEST_ATTR_ENTITY_MANAGER` as the name/key and an instance of `Doctrine\ORM\EntityManagerInterface` as the value.
  (For now only one entity manager can be specified, but I'll consider adding support for specifying more than one at some point—if I do, it will probably be done based on the FQCN for a given entity.)
