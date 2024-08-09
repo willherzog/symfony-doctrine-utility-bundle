@@ -66,22 +66,25 @@ class KernelResponseListener implements ServiceSubscriberInterface
 				$usingDefaultManager = true;
 			}
 
-			if( $entityManager->isOpen() ) {
+			$logger = $this->locator->has('logger') ? $this->locator->get('logger') : null;
+
+			if( !$entityManager->isOpen() ) {
+				$logger?->info(sprintf('Request attribute "%s" is present but Doctrine entity manager is closed (cannot flush).', BundleConstants::REQUEST_ATTR_FLUSH_REQUIRED), [
+					'event' => KernelEvents::RESPONSE,
+					'using_default_manager' => $usingDefaultManager
+				]);
+			} elseif( $entityManager->getUnitOfWork()->size() === 0 ) {
+				$logger?->info(sprintf('Request attribute "%s" is present but Doctrine entity manager has no managed entities (i.e. nothing to be "flushed").', BundleConstants::REQUEST_ATTR_FLUSH_REQUIRED), [
+					'event' => KernelEvents::RESPONSE,
+					'using_default_manager' => $usingDefaultManager
+				]);
+			} else {
 				$entityManager->flush();
 
-				if( $this->locator->has('logger') ) {
-					$this->locator->get('logger')->info('Called ->flush() on Doctrine entity manager.', [
-						'event' => KernelEvents::RESPONSE,
-						'using_default_manager' => $usingDefaultManager
-					]);
-				}
-			} else {
-				if( $this->locator->has('logger') ) {
-					$this->locator->get('logger')->info('Request attribute "wh_doctrine_flush_required" is present but Doctrine entity manager is closed (cannot flush).', [
-						'event' => KernelEvents::RESPONSE,
-						'using_default_manager' => $usingDefaultManager
-					]);
-				}
+				$logger?->info('Called ->flush() on Doctrine entity manager.', [
+					'event' => KernelEvents::RESPONSE,
+					'using_default_manager' => $usingDefaultManager
+				]);
 			}
 		}
 	}
