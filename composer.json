@@ -12,6 +12,10 @@
 	"repositories": [
 		{
 			"type": "vcs",
+			"url": "https://github.com/willherzog/php-util"
+		},
+		{
+			"type": "vcs",
 			"url": "https://github.com/willherzog/doctrine-generic"
 		}
 	],
@@ -20,7 +24,8 @@
         "doctrine/doctrine-bundle": "^2.11",
         "doctrine/orm": "^2.19",
 		"symfony/framework-bundle": "^7.0",
-        "willherzog/doctrine-generic": "dev-main"
+        "willherzog/doctrine-generic": "dev-main",
+		"willherzog/php-util": "dev-main"
 	},
     "autoload": {
         "psr-4": { "WHSymfony\\WHDoctrineUtilityBundle\\": "src/" }
