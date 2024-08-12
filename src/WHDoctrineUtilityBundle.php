@@ -20,7 +20,9 @@ use WHSymfony\WHDoctrineUtilityBundle\Migrations\EntityManagerAwareMigrationFact
  */
 class WHDoctrineUtilityBundle extends AbstractBundle
 {
+	/** @deprecated */
 	public const REQUEST_ATTR_FLUSH_REQUIRED = 'wh_doctrine_flush_required';
+	/** @deprecated */
 	public const REQUEST_ATTR_ENTITY_MANAGER = 'wh_doctrine_entity_manager';
 
 	protected string $extensionAlias = 'wh_doctrine';
@@ -82,9 +84,13 @@ class WHDoctrineUtilityBundle extends AbstractBundle
 	{
 		if( $config['enable_kernel_response_listener'] ) {
 			$container->services()
+				->set('whdoctrine.entity_manager_flush_requester', EntityManagerFlushRequester::class)
+				->alias(EntityManagerFlushRequester::class, 'whdoctrine.entity_manager_flush_requester')
+
 				->set('whdoctrine.kernel_response_listener', KernelResponseListener::class)
 					->args([
 						service('doctrine'),
+						service('whdoctrine.entity_manager_flush_requester'),
 						service_locator(['logger' => service('monolog.logger.whdoctrine')->ignoreOnInvalid()])
 					])
 					->tag('kernel.event_listener', ['event' => 'kernel.response'])

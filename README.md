@@ -5,22 +5,24 @@
 
 ### Lazy Flushing
 
- To use the "lazy" flushing feature, set an attribute on the *main* Symfony `Request` object (because only the main request is supported) which uses `WHDoctrineUtilityBundle::REQUEST_ATTR_FLUSH_REQUIRED` as its name/key and boolean `true` as its value:
+To use the "lazy" flushing feature, inject the `WHSymfony\WHDoctrineUtilityBundle\EntityManagerFlushRequester` service into one of your app's services or controller actions and call the `->addFlushRequestForEntity()` method with the fully-qualified class name for the relevant Doctrine entity as the sole argument:
 
 ```php
-use Symfony\Component\HttpFoundation\RequestStack;
-use WHSymfony\WHDoctrineUtilityBundle\WHDoctrineUtilityBundle;
+use Doctrine\ORM\EntityManagerInterface;
+use WHSymfony\WHDoctrineUtilityBundle\EntityManagerFlushRequester;
+
+use App\Entity\MyEntityClass;
 
 /* ... */
 
-/** @var RequestStack $requestStack */
-$request = $requestStack->getMainRequest();
+$newEntity = new MyEntityClass();
 
-$request->attributes->set(WHDoctrineUtilityBundle::REQUEST_ATTR_FLUSH_REQUIRED, true);
+/** @var EntityManagerInterface $entityManager */
+$entityManager->persist($newEntity);
+
+/** @var EntityManagerFlushRequester $flushRequester */
+$flushRequester->addFlushRequestForEntity(MyEntityClass::class);
 ```
-
- If you're using a Doctrine entity manager other than the default one, set another `Request` attribute using `WHDoctrineUtilityBundle::REQUEST_ATTR_ENTITY_MANAGER` as the name/key and an instance of `Doctrine\ORM\EntityManagerInterface` as the value.
- (For now only one entity manager can be specified, but I'll consider adding support for specifying more than one at some point—if I do, it will probably be done based on the FQCN for a given entity.)
 
 ### Entity-Manager-Aware Migrations
 

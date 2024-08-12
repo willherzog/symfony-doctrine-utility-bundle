@@ -12,7 +12,7 @@ use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Contracts\Service\ServiceSubscriberInterface;
 
-use WHSymfony\WHDoctrineUtilityBundle\WHDoctrineUtilityBundle as BundleConstants;
+use WHSymfony\WHDoctrineUtilityBundle\EntityManagerFlushRequester;
 
 /**
  * @author Will Herzog <willherzog@gmail.com>
@@ -26,65 +26,56 @@ class KernelResponseListener implements ServiceSubscriberInterface
 
 	public function __construct(
 		private readonly ManagerRegistry $managerRegistry,
+		private readonly EntityManagerFlushRequester $flushRequester,
 		private readonly ContainerInterface $locator
 	) {}
 
 	public function __invoke(ResponseEvent $event): void
 	{
-		$request = $event->getRequest();
-		$response = $event->getResponse();
-
-		if( !$event->isMainRequest() || $response->isClientError() || $response->isServerError() ) {
+		if( !$event->isMainRequest() || $event->getResponse()->isClientError() || $event->getResponse()->isServerError() ) {
 			return;
 		}
 
-		if(
-			$request->attributes->has(BundleConstants::REQUEST_ATTR_FLUSH_REQUIRED)
-			&& $request->attributes->getBoolean(BundleConstants::REQUEST_ATTR_FLUSH_REQUIRED)
-		) {
-			if( $request->attributes->has(BundleConstants::REQUEST_ATTR_ENTITY_MANAGER) ) {
-				$entityManager = $request->attributes->get(BundleConstants::REQUEST_ATTR_ENTITY_MANAGER);
+		$entityClasses = $this->flushRequester->getEntityClasses();
+		$entityManagersFlushed = [];
 
-				if( !$entityManager instanceof EntityManagerInterface ) {
-					throw new \UnexpectedValueException(sprintf(
-						'The request attribute "%s" has a value set but it is not an instance of %s.',
-						BundleConstants::REQUEST_ATTR_ENTITY_MANAGER,
-						EntityManagerInterface::class
-					));
-				}
+		if( count($entityClasses) > 0 ) {
+			$logger = $this->locator->has('logger') ? $this->locator->get('logger') : null;
+		}
 
-				$usingDefaultManager = false;
-			} else {
-				$entityManager = $this->managerRegistry->getManager();
+		foreach( $entityClasses as $entityClass ) {
+			$entityManager = $this->managerRegistry->getManagerForClass($entityClass);
 
-				// ManagerRegistry::getManager() returns an instance of ObjectManager, but that instance doesn't necessarily
-				// also implement EntityManagerInterface
-				if( !$entityManager instanceof EntityManagerInterface ) {
-					return;
-				}
+			if( !$entityManager instanceof EntityManagerInterface ) {
+				$logger?->notice('No associated Doctrine entity manager found for entity class.', [
+					'event' => KernelEvents::RESPONSE,
+					'entity' => $entityClass
+				]);
 
-				$usingDefaultManager = true;
+				continue;
 			}
 
-			$logger = $this->locator->has('logger') ? $this->locator->get('logger') : null;
+			if( !in_array($entityManager, $entityManagersFlushed) ) {
+				if( !$entityManager->isOpen() ) {
+					$logger?->info(sprintf('Doctrine entity manager is closed (cannot flush).'), [
+						'event' => KernelEvents::RESPONSE,
+						'entity' => $entityClass
+					]);
+				} elseif( $entityManager->getUnitOfWork()->size() === 0 ) {
+					$logger?->info(sprintf('Doctrine entity manager has no managed entities (i.e. nothing to be "flushed").'), [
+						'event' => KernelEvents::RESPONSE,
+						'entity' => $entityClass
+					]);
+				} else {
+					$entityManager->flush();
 
-			if( !$entityManager->isOpen() ) {
-				$logger?->info(sprintf('Request attribute "%s" is present but Doctrine entity manager is closed (cannot flush).', BundleConstants::REQUEST_ATTR_FLUSH_REQUIRED), [
-					'event' => KernelEvents::RESPONSE,
-					'using_default_manager' => $usingDefaultManager
-				]);
-			} elseif( $entityManager->getUnitOfWork()->size() === 0 ) {
-				$logger?->info(sprintf('Request attribute "%s" is present but Doctrine entity manager has no managed entities (i.e. nothing to be "flushed").', BundleConstants::REQUEST_ATTR_FLUSH_REQUIRED), [
-					'event' => KernelEvents::RESPONSE,
-					'using_default_manager' => $usingDefaultManager
-				]);
-			} else {
-				$entityManager->flush();
+					$logger?->info('Called ->flush() on Doctrine entity manager.', [
+						'event' => KernelEvents::RESPONSE,
+						'entity' => $entityClass
+					]);
+				}
 
-				$logger?->info('Called ->flush() on Doctrine entity manager.', [
-					'event' => KernelEvents::RESPONSE,
-					'using_default_manager' => $usingDefaultManager
-				]);
+				$entityManagersFlushed[] = $entityManager;
 			}
 		}
 	}
