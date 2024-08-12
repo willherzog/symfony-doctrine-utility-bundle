@@ -13,6 +13,7 @@ use WHDoctrine\Hydration\SimplifiedArrayHydrator;
 use WHDoctrine\Type\NullableArrayType;
 
 use WHSymfony\WHDoctrineUtilityBundle\HttpKernel\EventListener\KernelResponseListener;
+use WHSymfony\WHDoctrineUtilityBundle\Migrations\EntityManagerAwareMigrationFactory;
 
 /**
  * @author Will Herzog <willherzog@gmail.com>
@@ -31,6 +32,10 @@ class WHDoctrineUtilityBundle extends AbstractBundle
 				->booleanNode('enable_kernel_response_listener')
 					->defaultTrue()
 					->info('Whether WHDoctrineUtilityBundle\'s kernel response listener should be enabled.')
+				->end()
+				->booleanNode('enable_entity_manager_aware_migrations')
+					->defaultTrue()
+					->info('Whether to enable a decorator of the default Doctrine Migrations factory service which can inject the Doctrine entity manager into migration classes (ignored if your project does not have "doctrine/migrations" as a dependency).')
 				->end()
 			->end()
 		;
@@ -66,6 +71,19 @@ class WHDoctrineUtilityBundle extends AbstractBundle
 						service_locator(['logger' => service('monolog.logger.whdoctrine')->ignoreOnInvalid()])
 					])
 					->tag('kernel.event_listener', ['event' => 'kernel.response'])
+			;
+		}
+
+		$doctrineMigrationsFactory = 'Doctrine\Migrations\Version\DbalMigrationFactory';
+
+		if( $config['enable_entity_manager_aware_migrations'] && class_exists($doctrineMigrationsFactory) ) {
+			$container->services()
+				->set('whdoctrine.entity_manager_aware.migration_factory', EntityManagerAwareMigrationFactory::class)
+					->decorate($doctrineMigrationsFactory)
+					->args([
+						service('whdoctrine.entity_manager_aware.migration_factory.inner'),
+						service('doctrine.orm.entity_manager')
+					])
 			;
 		}
 	}
