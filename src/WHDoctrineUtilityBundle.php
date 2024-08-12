@@ -74,12 +74,10 @@ class WHDoctrineUtilityBundle extends AbstractBundle
 			;
 		}
 
-		$doctrineMigrationsFactory = 'Doctrine\Migrations\Version\DbalMigrationFactory';
-
-		if( $config['enable_entity_manager_aware_migrations'] && class_exists($doctrineMigrationsFactory) ) {
+		if( $config['enable_entity_manager_aware_migrations'] ) {
 			$container->services()
 				->set('whdoctrine.entity_manager_aware.migration_factory', EntityManagerAwareMigrationFactory::class)
-					->decorate($doctrineMigrationsFactory, invalidBehavior: ContainerInterface::IGNORE_ON_INVALID_REFERENCE)
+					->decorate('Doctrine\Migrations\Version\DbalMigrationFactory', invalidBehavior: ContainerInterface::IGNORE_ON_INVALID_REFERENCE)
 					->args([
 						service('whdoctrine.entity_manager_aware.migration_factory.inner'),
 						service('doctrine.orm.entity_manager'),
