@@ -3,7 +3,7 @@
 namespace WHSymfony\WHDoctrineUtilityBundle;
 
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\{ContainerBuilder,ContainerInterface};
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service_locator;
@@ -79,10 +79,11 @@ class WHDoctrineUtilityBundle extends AbstractBundle
 		if( $config['enable_entity_manager_aware_migrations'] && class_exists($doctrineMigrationsFactory) ) {
 			$container->services()
 				->set('whdoctrine.entity_manager_aware.migration_factory', EntityManagerAwareMigrationFactory::class)
-					->decorate($doctrineMigrationsFactory)
+					->decorate($doctrineMigrationsFactory, invalidBehavior: ContainerInterface::IGNORE_ON_INVALID_REFERENCE)
 					->args([
 						service('whdoctrine.entity_manager_aware.migration_factory.inner'),
-						service('doctrine.orm.entity_manager')
+						service('doctrine.orm.entity_manager'),
+						service_locator(['logger' => service('monolog.logger.whdoctrine')->ignoreOnInvalid()])
 					])
 			;
 		}
