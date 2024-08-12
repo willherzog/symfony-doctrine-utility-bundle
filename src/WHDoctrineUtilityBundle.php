@@ -94,7 +94,7 @@ class WHDoctrineUtilityBundle extends AbstractBundle
 		if( $builder->hasExtension('doctrine_migrations') && $config['enable_entity_manager_aware_migrations'] ) {
 			$container->services()
 				->set('whdoctrine.entity_manager_aware.migration_factory', EntityManagerAwareMigrationFactory::class)
-					->decorate('Doctrine\Migrations\Version\DbalMigrationFactory')
+					->decorate('doctrine.migrations.migrations_factory')
 					->args([
 						service('whdoctrine.entity_manager_aware.migration_factory.inner'),
 						service('doctrine.orm.entity_manager'),
