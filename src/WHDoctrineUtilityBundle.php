@@ -3,7 +3,7 @@
 namespace WHSymfony\WHDoctrineUtilityBundle;
 
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
-use Symfony\Component\DependencyInjection\{ContainerBuilder,ContainerInterface};
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service_locator;
@@ -56,6 +56,23 @@ class WHDoctrineUtilityBundle extends AbstractBundle
 			]
 		]);
 
+		if( $builder->hasExtension('doctrine_migrations') ) {
+			$configs = $builder->getExtensionConfig($this->extensionAlias);
+			$migrationServicesPrepended = false;
+
+			foreach( array_reverse($configs) as $config ) {
+				if( $config['enable_entity_manager_aware_migrations'] ?? false && !$migrationServicesPrepended ) {
+					$container->extension('doctrine_migrations', [
+						'services' => [
+							'Doctrine\Migrations\Version\MigrationFactory' => EntityManagerAwareMigrationFactory::class
+						]
+					]);
+
+					$migrationServicesPrepended = true;
+				}
+			}
+		}
+
 		$container->extension('monolog', [
 			'channels' => ['whdoctrine']
 		]);
@@ -74,10 +91,10 @@ class WHDoctrineUtilityBundle extends AbstractBundle
 			;
 		}
 
-		if( $config['enable_entity_manager_aware_migrations'] ) {
+		if( $builder->hasExtension('doctrine_migrations') && $config['enable_entity_manager_aware_migrations'] ) {
 			$container->services()
 				->set('whdoctrine.entity_manager_aware.migration_factory', EntityManagerAwareMigrationFactory::class)
-					->decorate('Doctrine\Migrations\Version\DbalMigrationFactory', invalidBehavior: ContainerInterface::IGNORE_ON_INVALID_REFERENCE)
+					->decorate('Doctrine\Migrations\Version\DbalMigrationFactory')
 					->args([
 						service('whdoctrine.entity_manager_aware.migration_factory.inner'),
 						service('doctrine.orm.entity_manager'),
