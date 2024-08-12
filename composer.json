@@ -23,7 +23,7 @@
 		"php": "^8.2",
         "doctrine/doctrine-bundle": "^2.12",
         "doctrine/orm": "^2.19",
-		"symfony/framework-bundle": "^6.4|^7.0",
+		"symfony/framework-bundle": "^7.0",
         "willherzog/doctrine-generic": "dev-main",
 		"willherzog/php-util": "dev-main"
 	},
