@@ -53,7 +53,7 @@ class WHDoctrineUtilityBundle extends AbstractBundle
 			],
 			'orm' => [
 				'hydrators' => [
-					'simplified_array' => SimplifiedArrayHydrator::class
+					SimplifiedArrayHydrator::MODE_NAME => SimplifiedArrayHydrator::class
 				]
 			]
 		]);
